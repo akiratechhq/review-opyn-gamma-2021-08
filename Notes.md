@@ -1,0 +1,124 @@
+- [ ] core/Controller.sol
+    - [ ] [ ] [Int] _isNotPartiallyPaused
+    - [ ] [ ] [Int] _isNotFullyPaused
+    - [ ] [ ] [Int] _isAuthorized
+    - [ ] [ ] [Ext] initialize #
+       - modifiers: initializer
+    - [ ] [ ] [Ext] donate #
+    - [ ] [ ] [Ext] setSystemPartiallyPaused #
+       - modifiers: onlyPartialPauser
+    - [ ] [ ] [Ext] setSystemFullyPaused #
+       - modifiers: onlyFullPauser
+    - [ ] [ ] [Ext] setFullPauser #
+       - modifiers: onlyOwner
+    - [ ] [ ] [Ext] setPartialPauser #
+       - modifiers: onlyOwner
+    - [ ] [ ] [Ext] setCallRestriction #
+       - modifiers: onlyOwner
+    - [ ] [ ] [Ext] setOperator #
+    - [ ] [ ] [Ext] refreshConfiguration #
+       - modifiers: onlyOwner
+    - [ ] [ ] [Ext] setNakedCap #
+       - modifiers: onlyOwner
+    - [ ] [ ] [Ext] operate #
+       - modifiers: nonReentrant,notFullyPaused
+    - [ ] [ ] [Ext] sync #
+       - modifiers: nonReentrant,notFullyPaused
+    - [ ] [ ] [Ext] isOperator
+    - [ ] [ ] [Ext] getConfiguration
+    - [ ] [ ] [Ext] getProceed
+    - [ ] [ ] [Ext] isLiquidatable
+    - [ ] [ ] [Pub] getPayout
+    - [ ] [ ] [Ext] isSettlementAllowed
+    - [ ] [ ] [Ext] canSettleAssets
+    - [ ] [ ] [Ext] getAccountVaultCounter
+    - [ ] [ ] [Ext] hasExpired
+    - [ ] [ ] [Ext] getVault
+    - [ ] [ ] [Pub] getVaultWithDetails
+    - [ ] [ ] [Ext] getNakedCap
+    - [ ] [ ] [Ext] getNakedPoolBalance
+    - [ ] [ ] [Int] _runActions #
+    - [ ] [ ] [Int] _verifyFinalState
+    - [ ] [ ] [Int] _openVault #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [ ] [ ] [Int] _depositLong #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [ ] [ ] [Int] _withdrawLong #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [ ] [ ] [Int] _depositCollateral #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [ ] [ ] [Int] _withdrawCollateral #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [ ] [ ] [Int] _mintOtoken #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [ ] [ ] [Int] _burnOtoken #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [ ] [ ] [Int] _redeem #
+    - [ ] [ ] [Int] _settleVault #
+       - modifiers: onlyAuthorized
+    - [ ] [ ] [Int] _liquidate #
+       - modifiers: notPartiallyPaused
+    - [ ] [ ] [Int] _call #
+       - modifiers: notPartiallyPaused,onlyWhitelistedCallee
+    - [ ] [ ] [Int] _checkVaultId
+    - [ ] [ ] [Int] _isNotEmpty
+    - [ ] [ ] [Int] _isCalleeWhitelisted
+    - [ ] [ ] [Int] _isLiquidatable
+    - [ ] [ ] [Int] _getOtokenDetails
+    - [ ] [ ] [Int] _canSettleAssets
+    - [ ] [ ] [Int] _refreshConfigInternal #
+
+- [ ] core/MarginCalculator.sol
+    - [ ] [Pub] <Constructor> #
+    - [ ] [Ext] setCollateralDust #
+       - modifiers: onlyOwner
+    - [ ] [Ext] setUpperBoundValues #
+       - modifiers: onlyOwner
+    - [ ] [Ext] updateUpperBoundValue #
+       - modifiers: onlyOwner
+    - [ ] [Ext] setSpotShock #
+       - modifiers: onlyOwner
+    - [ ] [Ext] setOracleDeviation #
+       - modifiers: onlyOwner
+    - [ ] [Ext] getCollateralDust
+    - [ ] [Ext] getTimesToExpiry
+    - [ ] [Ext] getMaxPrice
+    - [ ] [Ext] getSpotShock
+    - [ ] [Ext] getOracleDeviation
+    - [ ] [Ext] getNakedMarginRequired
+    - [ ] [Ext] getExpiredPayoutRate
+    - [ ] [Ext] isLiquidatable
+    - [ ] [Ext] getMarginRequired
+    - [ ] [Pub] getExcessCollateral
+    - [ ] [Int] _getExpiredCashValue
+    - [ ] [Int] _getMarginRequired
+    - [ ] [Int] _getNakedMarginRequired
+    - [ ] [Int] _findUpperBoundValue
+    - [ ] [Int] _getPutSpreadMarginRequired
+    - [ ] [Int] _getCallSpreadMarginRequired
+    - [ ] [Int] _convertAmountOnLivePrice
+    - [ ] [Int] _convertAmountOnExpiryPrice
+    - [ ] [Int] _getDebtPrice
+    - [ ] [Int] _getVaultDetails
+    - [ ] [Int] _getExpiredSpreadCashValue
+    - [ ] [Int] _isNotEmpty
+    - [ ] [Int] _checkIsValidVault
+    - [ ] [Int] _isMarginableLong
+    - [ ] [Int] _isMarginableCollateral
+    - [ ] [Int] _getProductHash
+    - [ ] [Int] _getCashValue
+    - [ ] [Int] _getOtokenDetails
+
+- [ ] external/callees/PermitCallee.sol
+    - [ ] [Ext] callFunction #
+- [ ] libs/MarginVault.sol
+  - [ ] Check if you can use the multiple option (even though they say it's not supported)
+    - [ ] [Ext] addShort #
+    - [ ] [Ext] removeShort #
+    - [ ] [Ext] addLong #
+    - [ ] [Ext] removeLong #
+    - [ ] [Ext] addCollateral #
+    - [ ] [Ext] removeCollateral #
+
+Global ideas:
+- [ ] Can frontrun people when they touch their vaults

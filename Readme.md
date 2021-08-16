@@ -1,3 +1,48 @@
+<div id="splash">
+    <div id="project">
+          <span class="splash-title">
+               Project
+          </span>
+          <br />
+          <span id="project-value">
+               Gamma
+          </span>
+    </div>
+     <div id="details">
+          <div id="left">
+               <span class="splash-title">
+                    Client
+               </span>
+               <br />
+               <span class="details-value">
+                    Opyn
+               </span>
+               <br />
+               <span class="splash-title">
+                    Date
+               </span>
+               <br />
+               <span class="details-value">
+                    August 2021
+               </span>
+          </div>
+          <div id="right">
+               <span class="splash-title">
+                    Reviewers
+               </span>
+               <br />
+               <span class="details-value">
+                    Daniel Luca
+               </span><br />
+               <span class="contact">@cleanunicorn</span>
+               <br />
+               <span class="details-value">
+                    Andrei Simion
+               </span><br />
+               <span class="contact">@andreiashu</span>
+          </div>
+    </div>
+</div>
 
 
 ## Table of Contents
@@ -18,11 +63,11 @@
 
 ## Details
 
-- **Client** Client name
+- **Client** Opyn
 - **Date** August 2021
 - **Lead reviewer** Daniel Luca ([@cleanunicorn](https://twitter.com/cleanunicorn))
 - **Reviewers** Daniel Luca ([@cleanunicorn](https://twitter.com/cleanunicorn)), Andrei Simion ([@andreiashu](https://twitter.com/andreiashu))
-- **Repository**: [Project name](https://github.com/opynfinance/GammaProtocol.git)
+- **Repository**: [Gamma](https://github.com/opynfinance/GammaProtocol.git)
 - **Commit hash** `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`
 - **Technologies**
   - Solidity
@@ -30,8 +75,8 @@
 
 ## Issues Summary
 
-| SEVERITY       |    OPEN    |    CLOSED    |
-|----------------|:----------:|:------------:|
+| SEVERITY | OPEN  | CLOSED |
+| -------- | :---: | :----: |
 |  Informational  |  0  |  0  |
 |  Minor  |  0  |  0  |
 |  Medium  |  0  |  0  |
@@ -39,9 +84,9 @@
 
 ## Executive summary
 
-This report represents the results of the engagement with **Client name** to review **Project name**.
+This report represents the results of the engagement with **Opyn** to review **Gamma**.
 
-The review was conducted over the course of **2 weeks** from **October 15 to November 15, 2020**. A total of **5 person-days** were spent reviewing the code.
+The review was conducted over the course of **2 weeks** from **August 16 to August 27, 2021**. A total of **20 person-days** were spent reviewing the code.
 
 ### Week 1
 
@@ -53,15 +98,19 @@ The second week was ...
 
 ## Scope
 
-The initial review focused on the [Project name](https://github.com/opynfinance/GammaProtocol.git) repository, identified by the commit hash `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`. ...
+The initial review focused on the [Gamma](https://github.com/opynfinance/GammaProtocol.git) repository, identified by the commit hash `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`. ...
 
 <!-- We focused on manually reviewing the codebase, searching for security issues such as, but not limited to, re-entrancy problems, transaction ordering, block timestamp dependency, exception handling, call stack depth limitation, integer overflow/underflow, self-destructible contracts, unsecured balance, use of origin, costly gas patterns, architectural problems, code readability. -->
 
 **Includes:**
-- GoodContract.sol
+- core/Controller.sol
+- core/MarginCalculator.sol
+- external/callees/PermitCallee.sol
+- libs/MarginVault.sol
+- TODO: add other contracts supporting these files
 
 **Excludes:**
-- BadContract.sol
+- Everything else
 
 ## Recommendations
 
@@ -227,7 +276,225 @@ surya mdreport report.md Contract.sol
 
 -->
 
+**📘 Controller**
+
+***Files Description Table***
+
+
+| File Name           | SHA-1 Hash                               |
+| ------------------- | ---------------------------------------- |
+| core/Controller.sol | 66a9209d597b4d4ff528d72730cc3e25af33badc |
+
+
+***Contracts Description Table***
+
+
+|    Contract    |           Type           |                             Bases                             |                |                                          |
+| :------------: | :----------------------: | :-----------------------------------------------------------: | :------------: | :--------------------------------------: |
+|       └        |    **Function Name**     |                        **Visibility**                         | **Mutability** |              **Modifiers**               |
+|                |                          |                                                               |                |                                          |
+| **Controller** |      Implementation      | Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe |                |                                          |
+|       └        |  _isNotPartiallyPaused   |                          Internal 🔒                           |                |                                          |
+|       └        |    _isNotFullyPaused     |                          Internal 🔒                           |                |                                          |
+|       └        |      _isAuthorized       |                          Internal 🔒                           |                |                                          |
+|       └        |        initialize        |                          External ❗️                           |       🛑        |               initializer                |
+|       └        |          donate          |                          External ❗️                           |       🛑        |                   NO❗️                    |
+|       └        | setSystemPartiallyPaused |                          External ❗️                           |       🛑        |            onlyPartialPauser             |
+|       └        |   setSystemFullyPaused   |                          External ❗️                           |       🛑        |              onlyFullPauser              |
+|       └        |      setFullPauser       |                          External ❗️                           |       🛑        |                onlyOwner                 |
+|       └        |     setPartialPauser     |                          External ❗️                           |       🛑        |                onlyOwner                 |
+|       └        |    setCallRestriction    |                          External ❗️                           |       🛑        |                onlyOwner                 |
+|       └        |       setOperator        |                          External ❗️                           |       🛑        |                   NO❗️                    |
+|       └        |   refreshConfiguration   |                          External ❗️                           |       🛑        |                onlyOwner                 |
+|       └        |       setNakedCap        |                          External ❗️                           |       🛑        |                onlyOwner                 |
+|       └        |         operate          |                          External ❗️                           |       🛑        |       nonReentrant notFullyPaused        |
+|       └        |           sync           |                          External ❗️                           |       🛑        |       nonReentrant notFullyPaused        |
+|       └        |        isOperator        |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |     getConfiguration     |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |        getProceed        |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |      isLiquidatable      |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |        getPayout         |                           Public ❗️                            |                |                   NO❗️                    |
+|       └        |   isSettlementAllowed    |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |     canSettleAssets      |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |  getAccountVaultCounter  |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |        hasExpired        |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |         getVault         |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |   getVaultWithDetails    |                           Public ❗️                            |                |                   NO❗️                    |
+|       └        |       getNakedCap        |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |   getNakedPoolBalance    |                          External ❗️                           |                |                   NO❗️                    |
+|       └        |       _runActions        |                          Internal 🔒                           |       🛑        |                                          |
+|       └        |    _verifyFinalState     |                          Internal 🔒                           |                |                                          |
+|       └        |        _openVault        |                          Internal 🔒                           |       🛑        |    notPartiallyPaused onlyAuthorized     |
+|       └        |       _depositLong       |                          Internal 🔒                           |       🛑        |    notPartiallyPaused onlyAuthorized     |
+|       └        |      _withdrawLong       |                          Internal 🔒                           |       🛑        |    notPartiallyPaused onlyAuthorized     |
+|       └        |    _depositCollateral    |                          Internal 🔒                           |       🛑        |    notPartiallyPaused onlyAuthorized     |
+|       └        |   _withdrawCollateral    |                          Internal 🔒                           |       🛑        |    notPartiallyPaused onlyAuthorized     |
+|       └        |       _mintOtoken        |                          Internal 🔒                           |       🛑        |    notPartiallyPaused onlyAuthorized     |
+|       └        |       _burnOtoken        |                          Internal 🔒                           |       🛑        |    notPartiallyPaused onlyAuthorized     |
+|       └        |         _redeem          |                          Internal 🔒                           |       🛑        |                                          |
+|       └        |       _settleVault       |                          Internal 🔒                           |       🛑        |              onlyAuthorized              |
+|       └        |        _liquidate        |                          Internal 🔒                           |       🛑        |            notPartiallyPaused            |
+|       └        |          _call           |                          Internal 🔒                           |       🛑        | notPartiallyPaused onlyWhitelistedCallee |
+|       └        |      _checkVaultId       |                          Internal 🔒                           |                |                                          |
+|       └        |       _isNotEmpty        |                          Internal 🔒                           |                |                                          |
+|       └        |   _isCalleeWhitelisted   |                          Internal 🔒                           |                |                                          |
+|       └        |     _isLiquidatable      |                          Internal 🔒                           |                |                                          |
+|       └        |    _getOtokenDetails     |                          Internal 🔒                           |                |                                          |
+|       └        |     _canSettleAssets     |                          Internal 🔒                           |                |                                          |
+|       └        |  _refreshConfigInternal  |                          Internal 🔒                           |       🛑        |                                          |
+
+
+**📘 MarginCalculator**
+
+***Files Description Table***
+
+
+| File Name                 | SHA-1 Hash                               |
+| ------------------------- | ---------------------------------------- |
+| core/MarginCalculator.sol | 3a4048d34b7a3cf47549e3e4d5b9712e23918f7f |
+
+
+***Contracts Description Table***
+
+
+|       Contract       |             Type             |     Bases      |                |               |
+| :------------------: | :--------------------------: | :------------: | :------------: | :-----------: |
+|          └           |      **Function Name**       | **Visibility** | **Mutability** | **Modifiers** |
+|                      |                              |                |                |               |
+| **MarginCalculator** |        Implementation        |    Ownable     |                |               |
+|          └           |        <Constructor>         |    Public ❗️    |       🛑        |      NO❗️      |
+|          └           |      setCollateralDust       |   External ❗️   |       🛑        |   onlyOwner   |
+|          └           |     setUpperBoundValues      |   External ❗️   |       🛑        |   onlyOwner   |
+|          └           |    updateUpperBoundValue     |   External ❗️   |       🛑        |   onlyOwner   |
+|          └           |         setSpotShock         |   External ❗️   |       🛑        |   onlyOwner   |
+|          └           |      setOracleDeviation      |   External ❗️   |       🛑        |   onlyOwner   |
+|          └           |      getCollateralDust       |   External ❗️   |                |      NO❗️      |
+|          └           |       getTimesToExpiry       |   External ❗️   |                |      NO❗️      |
+|          └           |         getMaxPrice          |   External ❗️   |                |      NO❗️      |
+|          └           |         getSpotShock         |   External ❗️   |                |      NO❗️      |
+|          └           |      getOracleDeviation      |   External ❗️   |                |      NO❗️      |
+|          └           |    getNakedMarginRequired    |   External ❗️   |                |      NO❗️      |
+|          └           |     getExpiredPayoutRate     |   External ❗️   |                |      NO❗️      |
+|          └           |        isLiquidatable        |   External ❗️   |                |      NO❗️      |
+|          └           |      getMarginRequired       |   External ❗️   |                |      NO❗️      |
+|          └           |     getExcessCollateral      |    Public ❗️    |                |      NO❗️      |
+|          └           |     _getExpiredCashValue     |   Internal 🔒   |                |               |
+|          └           |      _getMarginRequired      |   Internal 🔒   |                |               |
+|          └           |   _getNakedMarginRequired    |   Internal 🔒   |                |               |
+|          └           |     _findUpperBoundValue     |   Internal 🔒   |                |               |
+|          └           | _getPutSpreadMarginRequired  |   Internal 🔒   |                |               |
+|          └           | _getCallSpreadMarginRequired |   Internal 🔒   |                |               |
+|          └           |  _convertAmountOnLivePrice   |   Internal 🔒   |                |               |
+|          └           | _convertAmountOnExpiryPrice  |   Internal 🔒   |                |               |
+|          └           |        _getDebtPrice         |   Internal 🔒   |                |               |
+|          └           |       _getVaultDetails       |   Internal 🔒   |                |               |
+|          └           |  _getExpiredSpreadCashValue  |   Internal 🔒   |                |               |
+|          └           |         _isNotEmpty          |   Internal 🔒   |                |               |
+|          └           |      _checkIsValidVault      |   Internal 🔒   |                |               |
+|          └           |      _isMarginableLong       |   Internal 🔒   |                |               |
+|          └           |   _isMarginableCollateral    |   Internal 🔒   |                |               |
+|          └           |       _getProductHash        |   Internal 🔒   |                |               |
+|          └           |        _getCashValue         |   Internal 🔒   |                |               |
+|          └           |      _getOtokenDetails       |   Internal 🔒   |                |               |
+
+
+**📘 PermitCallee**
+
+***Files Description Table***
+
+
+| File Name                         | SHA-1 Hash                               |
+| --------------------------------- | ---------------------------------------- |
+| external/callees/PermitCallee.sol | b98ff2a706037baaa339e0f86e309798092ad81e |
+
+
+***Contracts Description Table***
+
+
+|     Contract     |       Type        |      Bases      |                |               |
+| :--------------: | :---------------: | :-------------: | :------------: | :-----------: |
+|        └         | **Function Name** | **Visibility**  | **Mutability** | **Modifiers** |
+|                  |                   |                 |                |               |
+| **PermitCallee** |  Implementation   | CalleeInterface |                |               |
+|        └         |   callFunction    |   External ❗️    |       🛑        |      NO❗️      |
+
+
+**📘 MarginVault**
+
+***Files Description Table***
+
+
+| File Name            | SHA-1 Hash                               |
+| -------------------- | ---------------------------------------- |
+| libs/MarginVault.sol | 5f067b7b716b0645029104f6de80ba8dcd279418 |
+
+
+***Contracts Description Table***
+
+
+|    Contract     |       Type        |     Bases      |                |               |
+| :-------------: | :---------------: | :------------: | :------------: | :-----------: |
+|        └        | **Function Name** | **Visibility** | **Mutability** | **Modifiers** |
+|                 |                   |                |                |               |
+| **MarginVault** |      Library      |                |                |               |
+|        └        |     addShort      |   External ❗️   |       🛑        |      NO❗️      |
+|        └        |    removeShort    |   External ❗️   |       🛑        |      NO❗️      |
+|        └        |      addLong      |   External ❗️   |       🛑        |      NO❗️      |
+|        └        |    removeLong     |   External ❗️   |       🛑        |      NO❗️      |
+|        └        |   addCollateral   |   External ❗️   |       🛑        |      NO❗️      |
+|        └        | removeCollateral  |   External ❗️   |       🛑        |      NO❗️      |
+
+
+***Legend***
+
+| Symbol | Meaning                   |
+| :----: | ------------------------- |
+|   🛑    | Function can modify state |
+|   💵    | Function is payable       |
+
+
 #### Graphs
+
+**📘 Controller**
+
+**Execution Graph**
+
+![Controller Graph](./static/Controller_graph.png)
+
+**Inheritance**
+
+![Controller Graph](./static/Controller_inheritance.png)
+
+**📘 MarginCalculator**
+
+**Execution Graph**
+
+![MarginCalculator Graph](./static/MarginCalculator_graph.png)
+
+**Inheritance**
+
+![MarginCalculator Graph](./static/MarginCalculator_inheritance.png)
+
+**📘 PermitCallee**
+
+**Execution Graph**
+
+![PermitCallee Graph](./static/PermitCallee_graph.png)
+
+**Inheritance**
+
+![PermitCallee Graph](./static/PermitCallee_inheritance.png)
+
+**📘 MarginVault**
+
+**Execution Graph**
+
+![MarginVault Graph](./static/MarginVault_graph.png)
+
+**Inheritance**
+
+![MarginVault Graph](./static/MarginVault_inheritance.png)
+
 
 <!-- ***Contract***
 
@@ -251,6 +518,164 @@ Use Solidity Visual Auditor
 
 #### Describe
 
+**📘 Controller**
+
+```text
+$ npx surya describe contracts/core/Controller.sol
+ +  Controller (Initializable, OwnableUpgradeSafe, ReentrancyGuardUpgradeSafe)
+    - [Int] _isNotPartiallyPaused
+    - [Int] _isNotFullyPaused
+    - [Int] _isAuthorized
+    - [Ext] initialize #
+       - modifiers: initializer
+    - [Ext] donate #
+    - [Ext] setSystemPartiallyPaused #
+       - modifiers: onlyPartialPauser
+    - [Ext] setSystemFullyPaused #
+       - modifiers: onlyFullPauser
+    - [Ext] setFullPauser #
+       - modifiers: onlyOwner
+    - [Ext] setPartialPauser #
+       - modifiers: onlyOwner
+    - [Ext] setCallRestriction #
+       - modifiers: onlyOwner
+    - [Ext] setOperator #
+    - [Ext] refreshConfiguration #
+       - modifiers: onlyOwner
+    - [Ext] setNakedCap #
+       - modifiers: onlyOwner
+    - [Ext] operate #
+       - modifiers: nonReentrant,notFullyPaused
+    - [Ext] sync #
+       - modifiers: nonReentrant,notFullyPaused
+    - [Ext] isOperator
+    - [Ext] getConfiguration
+    - [Ext] getProceed
+    - [Ext] isLiquidatable
+    - [Pub] getPayout
+    - [Ext] isSettlementAllowed
+    - [Ext] canSettleAssets
+    - [Ext] getAccountVaultCounter
+    - [Ext] hasExpired
+    - [Ext] getVault
+    - [Pub] getVaultWithDetails
+    - [Ext] getNakedCap
+    - [Ext] getNakedPoolBalance
+    - [Int] _runActions #
+    - [Int] _verifyFinalState
+    - [Int] _openVault #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [Int] _depositLong #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [Int] _withdrawLong #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [Int] _depositCollateral #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [Int] _withdrawCollateral #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [Int] _mintOtoken #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [Int] _burnOtoken #
+       - modifiers: notPartiallyPaused,onlyAuthorized
+    - [Int] _redeem #
+    - [Int] _settleVault #
+       - modifiers: onlyAuthorized
+    - [Int] _liquidate #
+       - modifiers: notPartiallyPaused
+    - [Int] _call #
+       - modifiers: notPartiallyPaused,onlyWhitelistedCallee
+    - [Int] _checkVaultId
+    - [Int] _isNotEmpty
+    - [Int] _isCalleeWhitelisted
+    - [Int] _isLiquidatable
+    - [Int] _getOtokenDetails
+    - [Int] _canSettleAssets
+    - [Int] _refreshConfigInternal #
+
+
+ ($) = payable function
+ # = non-constant function
+```
+
+**📘 MarginCalculator**
+
+```text
+$ npx surya describe ./core/MarginCalculator.sol 
+ +  MarginCalculator (Ownable)
+    - [Pub] <Constructor> #
+    - [Ext] setCollateralDust #
+       - modifiers: onlyOwner
+    - [Ext] setUpperBoundValues #
+       - modifiers: onlyOwner
+    - [Ext] updateUpperBoundValue #
+       - modifiers: onlyOwner
+    - [Ext] setSpotShock #
+       - modifiers: onlyOwner
+    - [Ext] setOracleDeviation #
+       - modifiers: onlyOwner
+    - [Ext] getCollateralDust
+    - [Ext] getTimesToExpiry
+    - [Ext] getMaxPrice
+    - [Ext] getSpotShock
+    - [Ext] getOracleDeviation
+    - [Ext] getNakedMarginRequired
+    - [Ext] getExpiredPayoutRate
+    - [Ext] isLiquidatable
+    - [Ext] getMarginRequired
+    - [Pub] getExcessCollateral
+    - [Int] _getExpiredCashValue
+    - [Int] _getMarginRequired
+    - [Int] _getNakedMarginRequired
+    - [Int] _findUpperBoundValue
+    - [Int] _getPutSpreadMarginRequired
+    - [Int] _getCallSpreadMarginRequired
+    - [Int] _convertAmountOnLivePrice
+    - [Int] _convertAmountOnExpiryPrice
+    - [Int] _getDebtPrice
+    - [Int] _getVaultDetails
+    - [Int] _getExpiredSpreadCashValue
+    - [Int] _isNotEmpty
+    - [Int] _checkIsValidVault
+    - [Int] _isMarginableLong
+    - [Int] _isMarginableCollateral
+    - [Int] _getProductHash
+    - [Int] _getCashValue
+    - [Int] _getOtokenDetails
+
+
+ ($) = payable function
+ # = non-constant function
+```
+
+**📘 PermitCallee**
+
+```text
+$ npx surya describe ./external/callees/PermitCallee.sol 
+ +  PermitCallee (CalleeInterface)
+    - [Ext] callFunction #
+
+
+ ($) = payable function
+ # = non-constant function
+```
+
+**📘 MarginVault**
+
+```text
+$ npx surya describe ./libs/MarginVault.sol
+ + [Lib] MarginVault 
+    - [Ext] addShort #
+    - [Ext] removeShort #
+    - [Ext] addLong #
+    - [Ext] removeLong #
+    - [Ext] addCollateral #
+    - [Ext] removeCollateral #
+
+
+ ($) = payable function
+ # = non-constant function
+```
+
 <!-- ```text
 $ npx surya describe ./Contract.sol
 ``` -->
@@ -271,4 +696,14 @@ $ npx buidler test
 
 This report falls under the terms described in the included [LICENSE](./LICENSE).
 
+<!-- Load highlight.js -->
+<link rel="stylesheet"
+href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/highlightjs-solidity@1.0.20/solidity.min.js"></script>
+<script type="text/javascript">
+    hljs.registerLanguage('solidity', window.hljsDefineSolidity);
+    hljs.initHighlightingOnLoad();
+</script>
 <link rel="stylesheet" href="./style/print.css"/>
