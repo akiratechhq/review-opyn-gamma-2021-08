@@ -54,6 +54,7 @@
  - [Scope](#scope)
  - [Recommendations](#recommendations)
  - [Issues](#issues)
+     - [A can be frontrun when they try to sync their vault](#a-can-be-frontrun-when-they-try-to-sync-their-vault)
  - [Artifacts](#artifacts)
      - [Surya](#surya)
      - [Coverage](#coverage)
@@ -79,7 +80,7 @@
 | -------- | :---: | :----: |
 |  Informational  |  0  |  0  |
 |  Minor  |  0  |  0  |
-|  Medium  |  0  |  0  |
+|  Medium  |  1  |  0  |
 |  Major  |  0  |  0  |
 
 ## Executive summary
@@ -260,6 +261,56 @@ Even if you remove the unused internal functions, it will not reduce the contrac
 Another way to improve contract size is by breaking them into multiple smaller contracts, grouped by functionality and using `DELEGATECALL` to execute that code. A standard that defines code splitting and selective code upgrade is the [EIP-2535 Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535), which is an extension of [Transparent Contract Standard](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1538.md). A detailed explanation, documentation and implementations can be found in the [EIP-2535](https://eips.ethereum.org/EIPS/eip-2535). However, the current EIP is in **Draft** status, which means the interface, implementation, and overall architecture might change. Another thing to keep in mind is that using this pattern increases the gas cost. -->
 
 ## Issues
+
+
+### [A can be frontrun when they try to sync their vault](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/1)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Medium](https://img.shields.io/static/v1?label=Severity&message=Medium&color=FF9500&style=flat-square)
+
+**Description**
+
+A user can call `Controller.sync()` to update their vault's latest timestamp.
+
+
+[code/contracts/core/Controller.sol#L439-L449](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/ee386cf23a1b3992c46a8d5ec85fbc216e80dea8/code/contracts/core/Controller.sol#L439-L449)
+```solidity
+    /**
+     * @notice sync vault latest update timestamp
+     * @dev anyone can update the latest time the vault was touched by calling this function
+     * vaultLatestUpdate will sync if the vault is well collateralized
+     * @param _owner vault owner address
+     * @param _vaultId vault id
+     */
+    function sync(address _owner, uint256 _vaultId) external nonReentrant notFullyPaused {
+        _verifyFinalState(_owner, _vaultId);
+        vaultLatestUpdate[_owner][_vaultId] = now;
+    }
+```
+
+This timestamp is important when a vault is liquidated. The method `MarginCalculator.isLiquidatable` needs the vault's timestamp to be in the past as compared to the current timestamp.
+
+
+[code/contracts/core/MarginCalculator.sol#L445-L449](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/ee386cf23a1b3992c46a8d5ec85fbc216e80dea8/code/contracts/core/MarginCalculator.sol#L445-L449)
+```solidity
+        // check that price timestamp is after latest timestamp the vault was updated at
+        require(
+            timestamp > _vaultLatestUpdate,
+            "MarginCalculator: auction timestamp should be post vault latest update"
+        );
+```
+
+If the vault was at some point in the past liquidatable, but now it isn't anymore, it could be liquidated, unless the user (or a benefactor) updates the user's vault by calling `Controller.sync(address _owner, uint256 _vaultId)`.
+
+Also, if anyone is watching the blockchain and they see a transaction in the mempool calling `Controller.sync()` they can assume (and verify) if that vault could be liquidated. They could front-run the `Controller.sync()` transaction and liquidate the vault before the timestamp is updated.
+
+The method seems to be vulnerable to front-running attacks.
+
+**Recommendation**
+
+- Update timestamp before liquidating?
+
+TBD
+
+---
 
 
 ## Artifacts

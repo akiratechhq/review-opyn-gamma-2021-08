@@ -1,72 +1,86 @@
 - [ ] core/Controller.sol
-    - [ ] [ ] [Int] _isNotPartiallyPaused
-    - [ ] [ ] [Int] _isNotFullyPaused
-    - [ ] [ ] [Int] _isAuthorized
-    - [ ] [ ] [Ext] initialize #
+    - [ ] [Int] _isNotPartiallyPaused
+      - [ ] Requires that the system is not partially paused, does not return true/false, just fails. 
+      - [ ] Maybe it's a function because of the contract size?
+        - No, because it's called only once.
+    - [ ] [Int] _isNotFullyPaused
+      - [ ] Same as `_isNotPartiallyPaused`
+    - [ ] [Int] _isAuthorized
+      - [ ] Same as `_isNotPartiallyPaused`
+    - [ ] [Ext] initialize #
        - modifiers: initializer
-    - [ ] [ ] [Ext] donate #
-    - [ ] [ ] [Ext] setSystemPartiallyPaused #
+    - [ ] [Ext] donate #
+      - [ ] Calls an external contract to transfer funds to itself.
+    - [ ] [Ext] setSystemPartiallyPaused #
        - modifiers: onlyPartialPauser
-    - [ ] [ ] [Ext] setSystemFullyPaused #
+    - [ ] [Ext] setSystemFullyPaused #
        - modifiers: onlyFullPauser
-    - [ ] [ ] [Ext] setFullPauser #
+    - [ ] [Ext] setFullPauser #
        - modifiers: onlyOwner
-    - [ ] [ ] [Ext] setPartialPauser #
+    - [ ] [Ext] setPartialPauser #
        - modifiers: onlyOwner
-    - [ ] [ ] [Ext] setCallRestriction #
+    - [ ] [Ext] setCallRestriction #
        - modifiers: onlyOwner
-    - [ ] [ ] [Ext] setOperator #
-    - [ ] [ ] [Ext] refreshConfiguration #
+         - [ ] Setting call restriction to false will allow users to force the contract to call other methods on random (non-whitelisted) contracts.
+           - [ ] Seems that the method `_call` externally calls `callFunction` on any random contract. So this means that the external call is rather restricted, which isn't clear if it's useful or not.
+    - [ ] [Ext] setOperator #
+      - [ ] Gives power to an operator.
+    - [ ] [Ext] refreshConfiguration #
        - modifiers: onlyOwner
-    - [ ] [ ] [Ext] setNakedCap #
+    - [ ] [Ext] setNakedCap #
        - modifiers: onlyOwner
-    - [ ] [ ] [Ext] operate #
+    - [ ] [Ext] operate #
        - modifiers: nonReentrant,notFullyPaused
-    - [ ] [ ] [Ext] sync #
+         - Why does this have `nonReentrant`?
+    - [ ] [Ext] sync #
        - modifiers: nonReentrant,notFullyPaused
-    - [ ] [ ] [Ext] isOperator
-    - [ ] [ ] [Ext] getConfiguration
-    - [ ] [ ] [Ext] getProceed
-    - [ ] [ ] [Ext] isLiquidatable
-    - [ ] [ ] [Pub] getPayout
-    - [ ] [ ] [Ext] isSettlementAllowed
-    - [ ] [ ] [Ext] canSettleAssets
-    - [ ] [ ] [Ext] getAccountVaultCounter
-    - [ ] [ ] [Ext] hasExpired
-    - [ ] [ ] [Ext] getVault
-    - [ ] [ ] [Pub] getVaultWithDetails
-    - [ ] [ ] [Ext] getNakedCap
-    - [ ] [ ] [Ext] getNakedPoolBalance
-    - [ ] [ ] [Int] _runActions #
-    - [ ] [ ] [Int] _verifyFinalState
-    - [ ] [ ] [Int] _openVault #
+         - Why does this have `nonReentrant`?
+         - [ ] One can frontrun the sync()
+    - [x] [Ext] isOperator
+    - [x] [Ext] getConfiguration
+    - [x] [Ext] getProceed
+    - [x] [Ext] isLiquidatable
+    - [ ] [Pub] getPayout
+    - [ ] [Ext] isSettlementAllowed
+    - [x] [Ext] canSettleAssets
+    - [ ] [Ext] getAccountVaultCounter
+    - [ ] [Ext] hasExpired
+    - [x] [Ext] getVault
+    - [x] [Pub] getVaultWithDetails
+    - [x] [Ext] getNakedCap
+    - [x] [Ext] getNakedPoolBalance
+    - [ ] [Int] _runActions #
+    - [ ] [Int] _verifyFinalState
+    - [x] [Int] _openVault #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [ ] [Int] _depositLong #
+    - [ ] [Int] _depositLong #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [ ] [Int] _withdrawLong #
+    - [ ] [Int] _withdrawLong #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [ ] [Int] _depositCollateral #
+    - [ ] [Int] _depositCollateral #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [ ] [Int] _withdrawCollateral #
+    - [ ] [Int] _withdrawCollateral #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [ ] [Int] _mintOtoken #
+    - [ ] [Int] _mintOtoken #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [ ] [Int] _burnOtoken #
+       - [x] Is this free? It doesn't seem to require any payment or anything. o__O
+         - No, this is verified by `_verifyFinalState`.
+    - [ ] [Int] _burnOtoken #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [ ] [Int] _redeem #
-    - [ ] [ ] [Int] _settleVault #
+    - [ ] [Int] _redeem #
+    - [ ] [Int] _settleVault #
        - modifiers: onlyAuthorized
-    - [ ] [ ] [Int] _liquidate #
+    - [ ] [Int] _liquidate #
        - modifiers: notPartiallyPaused
-    - [ ] [ ] [Int] _call #
+    - [ ] [Int] _call #
        - modifiers: notPartiallyPaused,onlyWhitelistedCallee
-    - [ ] [ ] [Int] _checkVaultId
-    - [ ] [ ] [Int] _isNotEmpty
-    - [ ] [ ] [Int] _isCalleeWhitelisted
-    - [ ] [ ] [Int] _isLiquidatable
-    - [ ] [ ] [Int] _getOtokenDetails
-    - [ ] [ ] [Int] _canSettleAssets
-    - [ ] [ ] [Int] _refreshConfigInternal #
+    - [x] [Int] _checkVaultId
+    - [ ] [Int] _isNotEmpty
+    - [ ] [Int] _isCalleeWhitelisted
+    - [ ] [Int] _isLiquidatable
+    - [ ] [Int] _getOtokenDetails
+    - [ ] [Int] _canSettleAssets
+    - [ ] [Int] _refreshConfigInternal #
 
 - [ ] core/MarginCalculator.sol
     - [ ] [Pub] <Constructor> #
@@ -111,6 +125,10 @@
 
 - [ ] external/callees/PermitCallee.sol
     - [ ] [Ext] callFunction #
+      - [ ] [EIP-2612](https://eips.ethereum.org/EIPS/eip-2612) not recommended because it is likely to change
+      - [x] Replay possible (?)
+        - Not possible because the ERC20 implementation should implement it correctly. Check is not in this contract.
+
 - [ ] libs/MarginVault.sol
   - [ ] Check if you can use the multiple option (even though they say it's not supported)
     - [ ] [Ext] addShort #
@@ -122,3 +140,4 @@
 
 Global ideas:
 - [ ] Can frontrun people when they touch their vaults
+- [ ] Nobody (Controller should) calls `MarginPool.batchTransferToPool`
