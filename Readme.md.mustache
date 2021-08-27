@@ -30,11 +30,19 @@ The review was conducted over the course of **{{review_period}}** from **{{date_
 
 ### Week 1
 
-During the first week, we ...
+During the first week, we started to get familiarized with the code and the project. We reviewed the code from the beginning to the end of the week.
+
+We set up a few meetings throughout the week to discuss the code and learn how to navigate the codebase. We also discussed the project goals and the project scope.
+
+We identified a few minor issues that we presented to the development team. A few of the already implemented and deployed features needed more clarification in terms of how they are currently configured, and how they fit into the overall project.
 
 ### Week 2
 
-The second week was ...
+We continued to keep communication open with the development team while navigating the code and trying out different attack vectors. 
+
+Even though the project has a lot of code, the way it is structured makes it easy to navigate and understand. Some of its parts exist outside of the blockchain context, meaning that they push trusted data into the chain, which then is used to calculate different security parameters.
+
+During the final days of the week we finalized the report and presented it to the client.
 
 ## Scope
 
@@ -45,9 +53,10 @@ The initial review focused on the [{{project_name}}]({{source_repository}}) repo
 **Includes:**
 - core/Controller.sol
 - core/MarginCalculator.sol
+- core/Otoken.sol
 - external/callees/PermitCallee.sol
 - libs/MarginVault.sol
-- TODO: add other contracts supporting these files
+- other contracts supporting these files
 
 **Excludes:**
 - Everything else

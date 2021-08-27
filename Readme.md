@@ -5,7 +5,7 @@
           </span>
           <br />
           <span id="project-value">
-               Gamma
+               Gamma Protocol
           </span>
     </div>
      <div id="details">
@@ -54,7 +54,14 @@
  - [Scope](#scope)
  - [Recommendations](#recommendations)
  - [Issues](#issues)
-     - [A can be frontrun when they try to sync their vault](#a-can-be-frontrun-when-they-try-to-sync-their-vault)
+     - [Donate will leave funds blocked in contract](#donate-will-leave-funds-blocked-in-contract)
+     - [donate should check whitelist](#donate-should-check-whitelist)
+     - [A user can be frontrun when they try to sync their vault](#a-user-can-be-frontrun-when-they-try-to-sync-their-vault)
+     - [notPartiallyPaused, notFullyPaused and onlyAuthorized modifiers have unnecessary function counterparts](#notpartiallypaused-notfullypaused-and-onlyauthorized-modifiers-have-unnecessary-function-counterparts)
+     - [Opening a vault type defaults to type zero](#opening-a-vault-type-defaults-to-type-zero)
+     - [External contract calls have unclear purpose](#external-contract-calls-have-unclear-purpose)
+     - [Reduce the number of methods where possible](#reduce-the-number-of-methods-where-possible)
+     - [EIP-2612 permit is likely to change](#eip-2612-permit-is-likely-to-change)
  - [Artifacts](#artifacts)
      - [Surya](#surya)
      - [Coverage](#coverage)
@@ -68,7 +75,7 @@
 - **Date** August 2021
 - **Lead reviewer** Daniel Luca ([@cleanunicorn](https://twitter.com/cleanunicorn))
 - **Reviewers** Daniel Luca ([@cleanunicorn](https://twitter.com/cleanunicorn)), Andrei Simion ([@andreiashu](https://twitter.com/andreiashu))
-- **Repository**: [Gamma](https://github.com/opynfinance/GammaProtocol.git)
+- **Repository**: [Gamma Protocol](https://github.com/opynfinance/GammaProtocol.git)
 - **Commit hash** `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`
 - **Technologies**
   - Solidity
@@ -78,37 +85,46 @@
 
 | SEVERITY | OPEN  | CLOSED |
 | -------- | :---: | :----: |
-|  Informational  |  0  |  0  |
-|  Minor  |  0  |  0  |
-|  Medium  |  1  |  0  |
-|  Major  |  0  |  0  |
+|  Informational  |  3  |  0  |
+|  Minor  |  2  |  0  |
+|  Medium  |  2  |  0  |
+|  Major  |  1  |  0  |
 
 ## Executive summary
 
-This report represents the results of the engagement with **Opyn** to review **Gamma**.
+This report represents the results of the engagement with **Opyn** to review **Gamma Protocol**.
 
 The review was conducted over the course of **2 weeks** from **August 16 to August 27, 2021**. A total of **20 person-days** were spent reviewing the code.
 
 ### Week 1
 
-During the first week, we ...
+During the first week, we started to get familiarized with the code and the project. We reviewed the code from the beginning to the end of the week.
+
+We set up a few meetings throughout the week to discuss the code and learn how to navigate the codebase. We also discussed the project goals and the project scope.
+
+We identified a few minor issues that we presented to the development team. A few of the already implemented and deployed features needed more clarification in terms of how they are currently configured, and how they fit into the overall project.
 
 ### Week 2
 
-The second week was ...
+We continued to keep communication open with the development team while navigating the code and trying out different attack vectors. 
+
+Even though the project has a lot of code, the way it is structured makes it easy to navigate and understand. Some of its parts exist outside of the blockchain context, meaning that they push trusted data into the chain, which then is used to calculate different security parameters.
+
+During the final days of the week we finalized the report and presented it to the client.
 
 ## Scope
 
-The initial review focused on the [Gamma](https://github.com/opynfinance/GammaProtocol.git) repository, identified by the commit hash `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`. ...
+The initial review focused on the [Gamma Protocol](https://github.com/opynfinance/GammaProtocol.git) repository, identified by the commit hash `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`. ...
 
 <!-- We focused on manually reviewing the codebase, searching for security issues such as, but not limited to, re-entrancy problems, transaction ordering, block timestamp dependency, exception handling, call stack depth limitation, integer overflow/underflow, self-destructible contracts, unsecured balance, use of origin, costly gas patterns, architectural problems, code readability. -->
 
 **Includes:**
 - core/Controller.sol
 - core/MarginCalculator.sol
+- core/Otoken.sol
 - external/callees/PermitCallee.sol
 - libs/MarginVault.sol
-- TODO: add other contracts supporting these files
+- other contracts supporting these files
 
 **Excludes:**
 - Everything else
@@ -263,7 +279,158 @@ Another way to improve contract size is by breaking them into multiple smaller c
 ## Issues
 
 
-### [A can be frontrun when they try to sync their vault](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/1)
+### [Donate will leave funds blocked in contract](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/5)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Major](https://img.shields.io/static/v1?label=Severity&message=Major&color=ff3b30&style=flat-square)
+
+**Description**
+
+`donate` function seems to allow users to donate an `_amount` of tokens of `_asset` to the margin pool:
+
+
+[code/contracts/core/Controller.sol#L316-L322](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L316-L322)
+```solidity
+     * @notice send asset amount to margin pool
+     * @dev use donate() instead of direct transfer() to store the balance in assetBalance
+     * @param _asset asset address
+     * @param _amount amount to donate to pool
+     */
+    function donate(address _asset, uint256 _amount) external {
+        pool.transferToPool(_asset, msg.sender, _amount);
+```
+
+`transferToPool` is used in order to transfer the tokens from the user to the pool. This function takes care of the internal accounting inside the `MarginPool` contract and updates the `assetBalance` accordingly:
+
+
+[code/contracts/core/MarginPool.sol#L74-L83](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/MarginPool.sol#L74-L83)
+```solidity
+    function transferToPool(
+        address _asset,
+        address _user,
+        uint256 _amount
+    ) public onlyController {
+        require(_amount > 0, "MarginPool: transferToPool amount is equal to 0");
+        assetBalance[_asset] = assetBalance[_asset].add(_amount);
+
+        // transfer _asset _amount from _user to pool
+        ERC20Interface(_asset).safeTransferFrom(_user, address(this), _amount);
+```
+
+We believe that the `farm` function was intended to be the one that would allow a designated farm account to withdraw the funds that were donated into the pool (ie. the difference between what is in the contract and `assetBalance`):
+
+
+[code/contracts/core/MarginPool.sol#L173-L178](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/MarginPool.sol#L173-L178)
+```solidity
+        uint256 externalBalance = ERC20Interface(_asset).balanceOf(address(this));
+        uint256 storedBalance = assetBalance[_asset];
+
+        require(_amount <= externalBalance.sub(storedBalance), "MarginPool: amount to farm exceeds limit");
+
+        ERC20Interface(_asset).safeTransfer(_receiver, _amount);
+```
+
+However, the issue is that because `transferToPool` also updates the internal accounting in the `assetBalance` mapping, the `require` at line L176 in `MarginPool` contract will fail for any value of `_amount` higher than 0.  Because the difference between the funds in the contract (`externalBalance `) and the amount accounted in the `assetBalance` mapping (`storedBalance`) will be 0 (*).  This leads to the situation where the donated funds are stuck in the contract:
+
+
+[code/contracts/core/MarginPool.sol#L176](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/MarginPool.sol#L176)
+```solidity
+        require(_amount <= externalBalance.sub(storedBalance), "MarginPool: amount to farm exceeds limit");
+```
+
+(*) this is true as long as users follow the recommendation in the `donate` documentation and only send transfers via this function. Any tokens sent _directly_ to the `MarginPool` by use of `transfer` can actually be _withdrawn_ / _farmed_.
+
+**Recommendation**
+
+Since this is a live contract and other systems might already be aware of the extrenal `donate` function, it might make sense to just do a `ERC20Interface(_asset).safeTransfer` call directly, without calling the `transferToPool`. This way, when the `farm` function is called, the `ERC20Interface(_asset).balanceOf` call in `MarginPool` contract will indeed be higher than the `assetBalance[_asset]` and the difference can be farmed.
+
+
+---
+
+
+### [`donate` should check whitelist](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/4)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Medium](https://img.shields.io/static/v1?label=Severity&message=Medium&color=FF9500&style=flat-square)
+
+**Description**
+
+Any actor can call `Controller.donate()` to push some ERC20 tokens into the pool.
+
+
+[code/contracts/core/Controller.sol#L315-L325](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L315-L325)
+```solidity
+    /**
+     * @notice send asset amount to margin pool
+     * @dev use donate() instead of direct transfer() to store the balance in assetBalance
+     * @param _asset asset address
+     * @param _amount amount to donate to pool
+     */
+    function donate(address _asset, uint256 _amount) external {
+        pool.transferToPool(_asset, msg.sender, _amount);
+
+        emit Donated(msg.sender, _asset, _amount);
+    }
+```
+
+There are other instances where tokens are pushed into the pool, but an additional whitelist validation is done in each case.
+
+**_depositLong**
+
+
+[code/contracts/core/Controller.sol#L726-L731](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L726-L731)
+```solidity
+    /**
+     * @notice deposit a long oToken into a vault
+     * @dev only the account owner or operator can deposit a long oToken, cannot be called when system is partiallyPaused or fullyPaused
+     * @param _args DepositArgs structure
+     */
+    function _depositLong(Actions.DepositArgs memory _args)
+```
+
+
+[code/contracts/core/Controller.sol#L740](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L740)
+```solidity
+        require(whitelist.isWhitelistedOtoken(_args.asset), "C17");
+```
+
+
+[code/contracts/core/Controller.sol#L748](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L748)
+```solidity
+        pool.transferToPool(_args.asset, _args.from, _args.amount);
+```
+
+**_depositCollateral**
+
+
+[code/contracts/core/Controller.sol#L776-L781](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L776-L781)
+```solidity
+    /**
+     * @notice deposit a collateral asset into a vault
+     * @dev only the account owner or operator can deposit collateral, cannot be called when system is partiallyPaused or fullyPaused
+     * @param _args DepositArgs structure
+     */
+    function _depositCollateral(Actions.DepositArgs memory _args)
+```
+
+
+[code/contracts/core/Controller.sol#L790](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L790)
+```solidity
+        require(whitelist.isWhitelistedCollateral(_args.asset), "C21");
+```
+
+
+[code/contracts/core/Controller.sol#L802](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L802)
+```solidity
+        pool.transferToPool(_args.asset, _args.from, _args.amount);
+```
+
+In order to keep the same rigorous accounting of only whitelisted tokens being accounted for in the pool, a whitelist check should be done in `donate` before transferring tokens.
+
+**Recommendation**
+
+Add an additional `require` check to validate the transferred token to the pool in the method `donate`.
+
+---
+
+
+### [A user can be frontrun when they try to sync their vault](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/1)
 ![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Medium](https://img.shields.io/static/v1?label=Severity&message=Medium&color=FF9500&style=flat-square)
 
 **Description**
@@ -309,6 +476,381 @@ The method seems to be vulnerable to front-running attacks.
 - Update timestamp before liquidating?
 
 TBD
+
+---
+
+
+### [`notPartiallyPaused`, `notFullyPaused` and `onlyAuthorized` modifiers have unnecessary function counterparts](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/8)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Minor](https://img.shields.io/static/v1?label=Severity&message=Minor&color=FFCC00&style=flat-square)
+
+**Description**
+
+`notPartiallyPaused` modifier calls `_isNotPartiallyPaused` function in order to ensure that the state variable `systemPartiallyPaused` is not set to _true_:
+
+
+[code/contracts/core/Controller.sol#L218-L221](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L218-L221)
+```solidity
+    modifier notPartiallyPaused {
+        _isNotPartiallyPaused();
+
+        _;
+```
+
+
+[code/contracts/core/Controller.sol#L277-L279](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L277-L279)
+```solidity
+    function _isNotPartiallyPaused() internal view {
+        require(!systemPartiallyPaused, "C4");
+    }
+```
+
+`_isNotPartiallyPaused` is an internal view function and is not called by any other function. This means that there is added gas costs but also mental energy expenditure for readers of the code and developers maintaining the contract.
+
+The same logic applies to `notFullyPaused` and `onlyAuthorized` (they make use internal view functions which  are called only from the modifier).
+
+**Recommendation**
+
+Include the `require` logic directly in the modifiers and delete the obsolete internal functions.
+
+
+---
+
+
+### [Opening a vault type defaults to type zero](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/3)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Minor](https://img.shields.io/static/v1?label=Severity&message=Minor&color=FFCC00&style=flat-square)
+
+**Description**
+
+A user can open a vault by calling `Controller.operate()` with a list of actions. One of those actions can be an open vault action.
+
+
+[code/contracts/core/Controller.sol#L426-L432](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L426-L432)
+```solidity
+    /**
+     * @notice execute a number of actions on specific vaults
+     * @dev can only be called when the system is not fully paused
+     * @param _actions array of actions arguments
+     */
+    function operate(Actions.ActionArgs[] memory _actions) external nonReentrant notFullyPaused {
+        (bool vaultUpdated, address vaultOwner, uint256 vaultId) = _runActions(_actions);
+```
+
+Each of those actions is executed in the controller, in the internal method `Controller._runActions`.
+
+If the action type is equal to `Actions.ActionType.OpenVault`, a new vault is opened for the user.
+
+
+[code/contracts/core/Controller.sol#L665-L666](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L665-L666)
+```solidity
+            if (actionType == Actions.ActionType.OpenVault) {
+                _openVault(Actions._parseOpenVaultArgs(action));
+```
+
+But first the arguments needed are parsed by `Actions._parseOpenVaultArgs`.
+
+
+[code/contracts/libs/Actions.sol#L184-L189](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/libs/Actions.sol#L184-L189)
+```solidity
+    /**
+     * @notice parses the passed in action arguments to get the arguments for an open vault action
+     * @param _args general action arguments structure
+     * @return arguments for a open vault action
+     */
+    function _parseOpenVaultArgs(ActionArgs memory _args) internal pure returns (OpenVaultArgs memory) {
+```
+
+The vault type is encoded in the `_args.data` property.
+
+
+[code/contracts/libs/Actions.sol#L196-L202](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/libs/Actions.sol#L196-L202)
+```solidity
+        if (_args.data.length == 32) {
+            // decode vault type from _args.data
+            vaultType = abi.decode(_args.data, (uint256));
+        }
+
+        // for now we only have 2 vault types
+        require(vaultType < 2, "A3");
+```
+
+This value is checked to be valid (only type 0 and 1 accepted), but it defaults to 0. If the encoded sent data is invalid, the type defaults to 0. If the `_args.data.length` is not of size 32, the vault type defaults to 0.
+
+**Recommendation**
+
+It might help ensure the encoded data is valid by having a stricter validation of the input data.
+
+A similar check is already done in `_parseLiquidateArgs`.
+
+
+[code/contracts/libs/Actions.sol#L323](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/libs/Actions.sol#L323)
+```solidity
+        require(_args.data.length == 32, "A21");
+```
+
+
+---
+
+
+### [External contract calls have unclear purpose](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/7)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Informational](https://img.shields.io/static/v1?label=Severity&message=Informational&color=34C759&style=flat-square)
+
+**Description**
+
+A user can call `operate` with a number of actions they want to execute in one transaction.
+
+
+[code/contracts/core/Controller.sol#L426-L437](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L426-L437)
+```solidity
+    /**
+     * @notice execute a number of actions on specific vaults
+     * @dev can only be called when the system is not fully paused
+     * @param _actions array of actions arguments
+     */
+    function operate(Actions.ActionArgs[] memory _actions) external nonReentrant notFullyPaused {
+        (bool vaultUpdated, address vaultOwner, uint256 vaultId) = _runActions(_actions);
+        if (vaultUpdated) {
+            _verifyFinalState(vaultOwner, vaultId);
+            vaultLatestUpdate[vaultOwner][vaultId] = now;
+        }
+    }
+```
+
+These actions can be very specific to the system currently being reviewed, but they can also be more generic. The generic actions can be specified by sending an action of type `Actions.ActionType.Call`.
+
+
+[code/contracts/core/Controller.sol#L685-L687](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L685-L687)
+```solidity
+            } else if (actionType == Actions.ActionType.Call) {
+                _call(Actions._parseCallArgs(action));
+            }
+```
+
+The method `_call` does an external call to a specified contract.
+
+
+[code/contracts/core/Controller.sol#L1037](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L1037)
+```solidity
+        CalleeInterface(_args.callee).callFunction(msg.sender, _args.data);
+```
+
+This can be used as a callback function to trigger external code the user needs in between the vault-related actions.
+
+There is also a modifier on top of this method that only allows a specific set of external contracts or any contract.
+
+
+[code/contracts/core/Controller.sol#L262-L272](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L262-L272)
+```solidity
+    /**
+     * @notice modifier to check if the called address is a whitelisted callee address
+     * @param _callee called address
+     */
+    modifier onlyWhitelistedCallee(address _callee) {
+        if (callRestricted) {
+            require(_isCalleeWhitelisted(_callee), "C3");
+        }
+
+        _;
+    }
+```
+
+This functionality is significantly restricted in a few ways:
+
+- `Controller` contract calls only a specific method of the destination contract `.callFunction`
+- list of arguments is fixed and already set up `(msg.sender, _args.data)`
+
+The result of the execution is not processed in any way. Whether the call fails or succeeds, the execution is not affected.
+
+Consider the following setup which makes an external call and emits different events based on the execution result.
+
+```solidity
+contract External {
+    bool public shouldFail;
+    
+    function setFail(bool _shouldFail) public {
+        shouldFail = _shouldFail;
+    }
+    
+    function maybeFail() public {
+        if (shouldFail) {
+            revert("Emitted error");
+        }
+    }
+}
+
+contract Caller {
+    External public e;
+    
+    constructor () {
+        e = new External();
+    } 
+    
+    function callMaybeFail() external {
+        try e.maybeFail() {
+            emit Success();
+        } catch Error(string memory _reason) {
+            emit ResultString(false, _reason);
+        } catch (bytes memory _lowLevelReason) {
+            emit ResultBytes(false, _lowLevelReason);
+        }
+    }
+    
+    event ResultBytes(bool, bytes);
+    event ResultString(bool, string);
+    event Success();
+}
+```
+
+The example above lets the contract behave differently based on the success of the execution. It is unclear whether this additional functionality is needed or required in the current context. Additional complexity needs to be added in order to complete the functionality.
+
+Extreme care needs to be taken if the external call functionality is extended.
+
+In its current form, it seems like a very limited type of functionality, but an extension of this functionality easily brings major security problems.
+
+A clearer, more specific description of the required functionality needs to be reviewed before implementing anything else in this direction.
+
+**Recommendation**
+
+Consider reviewing a more specific implementation plan before going forward with this functionality.
+
+---
+
+
+### [Reduce the number of methods where possible](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/6)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Informational](https://img.shields.io/static/v1?label=Severity&message=Informational&color=34C759&style=flat-square)
+
+**Description**
+
+There are a few methods that are only called once.
+
+- `_isNotPartiallyPaused`
+
+
+[code/contracts/core/Controller.sol#L215-L222](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L215-L222)
+```solidity
+    /**
+     * @notice modifier to check if the system is not partially paused, where only redeem and settleVault is allowed
+     */
+    modifier notPartiallyPaused {
+        _isNotPartiallyPaused();
+
+        _;
+    }
+```
+
+
+[code/contracts/core/Controller.sol#L274-L279](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L274-L279)
+```solidity
+    /**
+     * @dev check if the system is not in a partiallyPaused state
+     */
+    function _isNotPartiallyPaused() internal view {
+        require(!systemPartiallyPaused, "C4");
+    }
+```
+
+- `_isNotFullyPaused`
+
+
+[code/contracts/core/Controller.sol#L224-L231](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L224-L231)
+```solidity
+    /**
+     * @notice modifier to check if the system is not fully paused, where no functionality is allowed
+     */
+    modifier notFullyPaused {
+        _isNotFullyPaused();
+
+        _;
+    }
+```
+
+
+[code/contracts/core/Controller.sol#L281-L286](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L281-L286)
+```solidity
+    /**
+     * @dev check if the system is not in an fullyPaused state
+     */
+    function _isNotFullyPaused() internal view {
+        require(!systemFullyPaused, "C5");
+    }
+```
+
+- `_isAuthorized`
+
+
+[code/contracts/core/Controller.sol#L251-L260](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L251-L260)
+```solidity
+    /**
+     * @notice modifier to check if the sender is the account owner or an approved account operator
+     * @param _sender sender address
+     * @param _accountOwner account owner address
+     */
+    modifier onlyAuthorized(address _sender, address _accountOwner) {
+        _isAuthorized(_sender, _accountOwner);
+
+        _;
+    }
+```
+
+
+[code/contracts/core/Controller.sol#L288-L295](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L288-L295)
+```solidity
+    /**
+     * @dev check if the sender is an authorized operator
+     * @param _sender msg.sender
+     * @param _accountOwner owner of a vault
+     */
+    function _isAuthorized(address _sender, address _accountOwner) internal view {
+        require((_sender == _accountOwner) || (operators[_accountOwner][_sender]), "C6");
+    }
+```
+
+**Recommendation**
+
+In order to reduce code complexity and reduce gas costs, the methods can be removed and their body can be added directly in the respective modifier.
+
+
+---
+
+
+### [EIP-2612 permit is likely to change](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/2)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Informational](https://img.shields.io/static/v1?label=Severity&message=Informational&color=34C759&style=flat-square)
+
+**Description**
+
+The contract `PermitCallee` uses the [EIP-2612: permit – 712-signed approvals](https://eips.ethereum.org/EIPS/eip-2612) standard to update the allowance for a user, using a provided signature.
+
+
+[code/contracts/external/callees/PermitCallee.sol#L11-L31](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/external/callees/PermitCallee.sol#L11-L31)
+```solidity
+/**
+ * @title PermitCallee
+ * @author Opyn Team
+ * @dev Contract for executing permit signature
+ */
+contract PermitCallee is CalleeInterface {
+    function callFunction(address payable _sender, bytes memory _data) external override {
+        (
+            address token,
+            address owner,
+            address spender,
+            uint256 amount,
+            uint256 deadline,
+            uint8 v,
+            bytes32 r,
+            bytes32 s
+        ) = abi.decode(_data, (address, address, address, uint256, uint256, uint8, bytes32, bytes32));
+
+        IERC20PermitUpgradeable(token).permit(owner, spender, amount, deadline, v, r, s);
+    }
+}
+```
+
+This standard isn't officially recommended anymore and will likely change in the future. This might be because of [EIP-3074: AUTH and AUTHCALL opcodes](https://eips.ethereum.org/EIPS/eip-3074).
+
+**Recommendation**
+
+Consider deprecating or not relying too much on the currently implemented functionality and consider using the more flexible **EIP-3074: AUTH and AUTHCALL opcodes**.
+
 
 ---
 

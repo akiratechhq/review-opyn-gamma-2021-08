@@ -1,143 +1,143 @@
-- [ ] core/Controller.sol
-    - [ ] [Int] _isNotPartiallyPaused
-      - [ ] Requires that the system is not partially paused, does not return true/false, just fails. 
-      - [ ] Maybe it's a function because of the contract size?
+- [x] core/Controller.sol
+    - [x] [Int] _isNotPartiallyPaused
+      - [x] Requires that the system is not partially paused, does not return true/false, just fails. 
+      - [x] Maybe it's a function because of the contract size?
         - No, because it's called only once.
-    - [ ] [Int] _isNotFullyPaused
-      - [ ] Same as `_isNotPartiallyPaused`
-    - [ ] [Int] _isAuthorized
-      - [ ] Same as `_isNotPartiallyPaused`
-    - [ ] [Ext] initialize #
+    - [x] [Int] _isNotFullyPaused
+      - [x] Same as `_isNotPartiallyPaused`
+    - [x] [Int] _isAuthorized
+      - [x] Same as `_isNotPartiallyPaused`
+    - [x] [Ext] initialize #
        - modifiers: initializer
-    - [ ] [Ext] donate #
-      - [ ] Calls an external contract to transfer funds to itself.
-    - [ ] [Ext] setSystemPartiallyPaused #
+    - [x] [Ext] donate #
+      - [x] Calls an external contract to transfer funds to itself.
+    - [x] [Ext] setSystemPartiallyPaused #
        - modifiers: onlyPartialPauser
-    - [ ] [Ext] setSystemFullyPaused #
+    - [x] [Ext] setSystemFullyPaused #
        - modifiers: onlyFullPauser
-    - [ ] [Ext] setFullPauser #
+    - [x] [Ext] setFullPauser #
        - modifiers: onlyOwner
-    - [ ] [Ext] setPartialPauser #
+    - [x] [Ext] setPartialPauser #
        - modifiers: onlyOwner
-    - [ ] [Ext] setCallRestriction #
+    - [x] [Ext] setCallRestriction #
        - modifiers: onlyOwner
-         - [ ] Setting call restriction to false will allow users to force the contract to call other methods on random (non-whitelisted) contracts.
-           - [ ] Seems that the method `_call` externally calls `callFunction` on any random contract. So this means that the external call is rather restricted, which isn't clear if it's useful or not.
-    - [ ] [Ext] setOperator #
-      - [ ] Gives power to an operator.
-    - [ ] [Ext] refreshConfiguration #
+         - [x] Setting call restriction to false will allow users to force the contract to call other methods on random (non-whitelisted) contracts.
+           - [x] Seems that the method `_call` externally calls `callFunction` on any random contract. So this means that the external call is rather restricted, which isn't clear if it's useful or not.
+    - [x] [Ext] setOperator #
+      - [x] Gives power to an operator.
+    - [x] [Ext] refreshConfiguration #
        - modifiers: onlyOwner
-    - [ ] [Ext] setNakedCap #
+    - [x] [Ext] setNakedCap #
        - modifiers: onlyOwner
-    - [ ] [Ext] operate #
+    - [x] [Ext] operate #
        - modifiers: nonReentrant,notFullyPaused
          - Why does this have `nonReentrant`?
-    - [ ] [Ext] sync #
+    - [x] [Ext] sync #
        - modifiers: nonReentrant,notFullyPaused
          - Why does this have `nonReentrant`?
-         - [ ] One can frontrun the sync()
+         - [x] One can frontrun the sync()
     - [x] [Ext] isOperator
     - [x] [Ext] getConfiguration
     - [x] [Ext] getProceed
     - [x] [Ext] isLiquidatable
-    - [ ] [Pub] getPayout
-    - [ ] [Ext] isSettlementAllowed
+    - [x] [Pub] getPayout
+    - [x] [Ext] isSettlementAllowed
     - [x] [Ext] canSettleAssets
-    - [ ] [Ext] getAccountVaultCounter
-    - [ ] [Ext] hasExpired
+    - [x] [Ext] getAccountVaultCounter
+    - [x] [Ext] hasExpired
     - [x] [Ext] getVault
     - [x] [Pub] getVaultWithDetails
     - [x] [Ext] getNakedCap
     - [x] [Ext] getNakedPoolBalance
-    - [ ] [Int] _runActions #
-    - [ ] [Int] _verifyFinalState
+    - [x] [Int] _runActions #
+    - [x] [Int] _verifyFinalState
     - [x] [Int] _openVault #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [Int] _depositLong #
+    - [x] [Int] _depositLong #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [Int] _withdrawLong #
+    - [x] [Int] _withdrawLong #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [Int] _depositCollateral #
+    - [x] [Int] _depositCollateral #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [Int] _withdrawCollateral #
+    - [x] [Int] _withdrawCollateral #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [Int] _mintOtoken #
+    - [x] [Int] _mintOtoken #
        - modifiers: notPartiallyPaused,onlyAuthorized
        - [x] Is this free? It doesn't seem to require any payment or anything. o__O
          - No, this is verified by `_verifyFinalState`.
-    - [ ] [Int] _burnOtoken #
+    - [x] [Int] _burnOtoken #
        - modifiers: notPartiallyPaused,onlyAuthorized
-    - [ ] [Int] _redeem #
-    - [ ] [Int] _settleVault #
+    - [x] [Int] _redeem #
+    - [x] [Int] _settleVault #
        - modifiers: onlyAuthorized
-    - [ ] [Int] _liquidate #
+    - [x] [Int] _liquidate #
        - modifiers: notPartiallyPaused
-    - [ ] [Int] _call #
+    - [x] [Int] _call #
        - modifiers: notPartiallyPaused,onlyWhitelistedCallee
     - [x] [Int] _checkVaultId
-    - [ ] [Int] _isNotEmpty
-    - [ ] [Int] _isCalleeWhitelisted
-    - [ ] [Int] _isLiquidatable
-    - [ ] [Int] _getOtokenDetails
-    - [ ] [Int] _canSettleAssets
-    - [ ] [Int] _refreshConfigInternal #
+    - [x] [Int] _isNotEmpty
+    - [x] [Int] _isCalleeWhitelisted
+    - [x] [Int] _isLiquidatable
+    - [x] [Int] _getOtokenDetails
+    - [x] [Int] _canSettleAssets
+    - [x] [Int] _refreshConfigInternal #
 
-- [ ] core/MarginCalculator.sol
-    - [ ] [Pub] <Constructor> #
-    - [ ] [Ext] setCollateralDust #
+- [x] core/MarginCalculator.sol
+    - [x] [Pub] <Constructor> #
+    - [x] [Ext] setCollateralDust #
        - modifiers: onlyOwner
-    - [ ] [Ext] setUpperBoundValues #
+    - [x] [Ext] setUpperBoundValues #
        - modifiers: onlyOwner
-    - [ ] [Ext] updateUpperBoundValue #
+    - [x] [Ext] updateUpperBoundValue #
        - modifiers: onlyOwner
-    - [ ] [Ext] setSpotShock #
+    - [x] [Ext] setSpotShock #
        - modifiers: onlyOwner
-    - [ ] [Ext] setOracleDeviation #
+    - [x] [Ext] setOracleDeviation #
        - modifiers: onlyOwner
-    - [ ] [Ext] getCollateralDust
-    - [ ] [Ext] getTimesToExpiry
-    - [ ] [Ext] getMaxPrice
-    - [ ] [Ext] getSpotShock
-    - [ ] [Ext] getOracleDeviation
-    - [ ] [Ext] getNakedMarginRequired
-    - [ ] [Ext] getExpiredPayoutRate
-    - [ ] [Ext] isLiquidatable
-    - [ ] [Ext] getMarginRequired
-    - [ ] [Pub] getExcessCollateral
-    - [ ] [Int] _getExpiredCashValue
-    - [ ] [Int] _getMarginRequired
-    - [ ] [Int] _getNakedMarginRequired
-    - [ ] [Int] _findUpperBoundValue
-    - [ ] [Int] _getPutSpreadMarginRequired
-    - [ ] [Int] _getCallSpreadMarginRequired
-    - [ ] [Int] _convertAmountOnLivePrice
-    - [ ] [Int] _convertAmountOnExpiryPrice
-    - [ ] [Int] _getDebtPrice
-    - [ ] [Int] _getVaultDetails
-    - [ ] [Int] _getExpiredSpreadCashValue
-    - [ ] [Int] _isNotEmpty
-    - [ ] [Int] _checkIsValidVault
-    - [ ] [Int] _isMarginableLong
-    - [ ] [Int] _isMarginableCollateral
-    - [ ] [Int] _getProductHash
-    - [ ] [Int] _getCashValue
-    - [ ] [Int] _getOtokenDetails
+    - [x] [Ext] getCollateralDust
+    - [x] [Ext] getTimesToExpiry
+    - [x] [Ext] getMaxPrice
+    - [x] [Ext] getSpotShock
+    - [x] [Ext] getOracleDeviation
+    - [x] [Ext] getNakedMarginRequired
+    - [x] [Ext] getExpiredPayoutRate
+    - [x] [Ext] isLiquidatable
+    - [x] [Ext] getMarginRequired
+    - [x] [Pub] getExcessCollateral
+    - [x] [Int] _getExpiredCashValue
+    - [x] [Int] _getMarginRequired
+    - [x] [Int] _getNakedMarginRequired
+    - [x] [Int] _findUpperBoundValue
+    - [x] [Int] _getPutSpreadMarginRequired
+    - [x] [Int] _getCallSpreadMarginRequired
+    - [x] [Int] _convertAmountOnLivePrice
+    - [x] [Int] _convertAmountOnExpiryPrice
+    - [x] [Int] _getDebtPrice
+    - [x] [Int] _getVaultDetails
+    - [x] [Int] _getExpiredSpreadCashValue
+    - [x] [Int] _isNotEmpty
+    - [x] [Int] _checkIsValidVault
+    - [x] [Int] _isMarginableLong
+    - [x] [Int] _isMarginableCollateral
+    - [x] [Int] _getProductHash
+    - [x] [Int] _getCashValue
+    - [x] [Int] _getOtokenDetails
 
-- [ ] external/callees/PermitCallee.sol
-    - [ ] [Ext] callFunction #
-      - [ ] [EIP-2612](https://eips.ethereum.org/EIPS/eip-2612) not recommended because it is likely to change
+- [x] external/callees/PermitCallee.sol
+    - [x] [Ext] callFunction #
+      - [x] [EIP-2612](https://eips.ethereum.org/EIPS/eip-2612) not recommended because it is likely to change
       - [x] Replay possible (?)
         - Not possible because the ERC20 implementation should implement it correctly. Check is not in this contract.
 
-- [ ] libs/MarginVault.sol
-  - [ ] Check if you can use the multiple option (even though they say it's not supported)
-    - [ ] [Ext] addShort #
-    - [ ] [Ext] removeShort #
-    - [ ] [Ext] addLong #
-    - [ ] [Ext] removeLong #
-    - [ ] [Ext] addCollateral #
-    - [ ] [Ext] removeCollateral #
+- [x] libs/MarginVault.sol
+  - [x] Check if you can use the multiple option (even though they say it's not supported)
+    - [x] [Ext] addShort #
+    - [x] [Ext] removeShort #
+    - [x] [Ext] addLong #
+    - [x] [Ext] removeLong #
+    - [x] [Ext] addCollateral #
+    - [x] [Ext] removeCollateral #
 
 Global ideas:
-- [ ] Can frontrun people when they touch their vaults
-- [ ] Nobody (Controller should) calls `MarginPool.batchTransferToPool`
+- [x] Can frontrun people when they touch their vaults
+- [x] Nobody (Controller should) calls `MarginPool.batchTransferToPool`
