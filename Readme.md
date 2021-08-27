@@ -193,6 +193,7 @@ However, the issue is that because `transferToPool` also updates the internal ac
 
 Since this is a live contract and other systems might already be aware of the external `donate` function, it might make sense to just do a `ERC20Interface(_asset).safeTransfer` call directly, without calling the `transferToPool`. This way, when the `farm` function is called, the `ERC20Interface(_asset).balanceOf` call in `MarginPool` contract will indeed be higher than the `assetBalance[_asset]` and the difference can be farmed.
 
+After further discussion with the development team, we understood the purpose of the `donate` method was to add funds to the protocol when it is under collateralized to cover for the missing funds. Anyone can call this method because they plan to have an emergency plan to add funds in the vault. 
 
 ---
 
