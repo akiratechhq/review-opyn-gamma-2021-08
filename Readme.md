@@ -52,20 +52,16 @@
      - [Week 1](#week-1)
      - [Week 2](#week-2)
  - [Scope](#scope)
- - [Recommendations](#recommendations)
  - [Issues](#issues)
-     - [Donate will leave funds blocked in contract](#donate-will-leave-funds-blocked-in-contract)
-     - [donate should check whitelist](#donate-should-check-whitelist)
-     - [A user can be frontrun when they try to sync their vault](#a-user-can-be-frontrun-when-they-try-to-sync-their-vault)
+     - [Donate can lock funds in certain situations](#donate-can-lock-funds-in-certain-situations)
+     - [donate should make sure the assets handled are part of the whitelist](#donate-should-make-sure-the-assets-handled-are-part-of-the-whitelist)
+     - [A user calling sync can be front-run](#a-user-calling-sync-can-be-front-run)
      - [notPartiallyPaused, notFullyPaused and onlyAuthorized modifiers have unnecessary function counterparts](#notpartiallypaused-notfullypaused-and-onlyauthorized-modifiers-have-unnecessary-function-counterparts)
      - [Opening a vault type defaults to type zero](#opening-a-vault-type-defaults-to-type-zero)
      - [External contract calls have unclear purpose](#external-contract-calls-have-unclear-purpose)
-     - [Reduce the number of methods where possible](#reduce-the-number-of-methods-where-possible)
      - [EIP-2612 permit is likely to change](#eip-2612-permit-is-likely-to-change)
  - [Artifacts](#artifacts)
      - [Surya](#surya)
-     - [Coverage](#coverage)
-     - [Tests](#tests)
  - [License](#license)
 
 
@@ -85,10 +81,10 @@
 
 | SEVERITY | OPEN  | CLOSED |
 | -------- | :---: | :----: |
-|  Informational  |  3  |  0  |
+|  Informational  |  2  |  0  |
 |  Minor  |  2  |  0  |
-|  Medium  |  2  |  0  |
-|  Major  |  1  |  0  |
+|  Medium  |  3  |  0  |
+|  Major  |  0  |  0  |
 
 ## Executive summary
 
@@ -114,13 +110,15 @@ During the final days of the week we finalized the report and presented it to th
 
 ## Scope
 
-The initial review focused on the [Gamma Protocol](https://github.com/opynfinance/GammaProtocol.git) repository, identified by the commit hash `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`. ...
+The initial review focused on the [Gamma Protocol](https://github.com/opynfinance/GammaProtocol.git) repository, identified by the commit hash `67a2bff57ec49c4bb7c9c454c8ad945fd5bdcf51`.
 
-<!-- We focused on manually reviewing the codebase, searching for security issues such as, but not limited to, re-entrancy problems, transaction ordering, block timestamp dependency, exception handling, call stack depth limitation, integer overflow/underflow, self-destructible contracts, unsecured balance, use of origin, costly gas patterns, architectural problems, code readability. -->
+We focused on manually reviewing the codebase, searching for security issues such as, but not limited to, re-entrancy problems, transaction ordering, block timestamp dependency, exception handling, call stack depth limitation, integer overflow/underflow, self-destructible contracts, unsecured balance, use of origin, costly gas patterns, architectural problems, code readability.
 
 **Includes:**
+- core/AddressBook.sol
 - core/Controller.sol
 - core/MarginCalculator.sol
+- core/MarginPool.sol
 - core/Otoken.sol
 - external/callees/PermitCallee.sol
 - libs/MarginVault.sol
@@ -129,158 +127,11 @@ The initial review focused on the [Gamma Protocol](https://github.com/opynfinanc
 **Excludes:**
 - Everything else
 
-## Recommendations
-
-We identified a few possible general improvements that are not security issues during the review, which will bring value to the developers and the community reviewing and using the product.
-
-<!-- ### Increase the number of tests
-
-A good rule of thumb is to have 100% test coverage. This does not guarantee the lack of security problems, but it means that the desired functionality behaves as intended. The negative tests also bring a lot of value because not allowing some actions to happen is also part of the desired behavior.
-
--->
-
-<!-- ### Set up Continuous Integration
-
-Use one of the platforms that offer Continuous Integration services and implement a list of actions that compile, test, run coverage and create alerts when the pipeline fails.
-
-Because the repository is hosted on GitHub, the most painless way to set up the Continuous Integration is through [GitHub Actions](https://docs.github.com/en/free-pro-team@latest/actions).
-
-Setting up the workflow can start based on this example template.
-
-
-```yml
-name: Continuous Integration
-
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
-
-jobs:
-  build:
-    name: Build and test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [12.x]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: cp ./config.sample.js ./config.js
-    - run: npm test
-
-  coverage:
-    name: Coverage
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [12.x]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: cp ./config.sample.js ./config.js
-    - run: npm run coverage
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Coverage ${{ matrix.node-version }}
-        path: |
-          coverage/
-```
-
-This CI template activates on pushes and pull requests on the **master** branch.
-
-```yml
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
-```
-
-It uses an [Ubuntu Docker](https://hub.docker.com/_/ubuntu) image as a base for setting up the project.
-
-```yml
-    runs-on: ubuntu-latest
-```
-
-Multiple Node.js versions can be used to check integration. However, because this is not primarily a Node.js project, multiple versions don't provide added value.
-
-```yml
-    strategy:
-      matrix:
-        node-version: [12.x]
-```
-
-A script item should be added in the `scripts` section of [package.json](./code/package.json) that runs all tests.
-
-```json
-{
-   "script": {
-      "test": "buidler test"
-   }
-}
-```
-
-This can then be called by running `npm test` after setting up the dependencies with `npm ci`.
-
-If any hidden variables need to be defined, you can set them up in a local version of `./config.sample.js` (locally named `./config.js`). If you decide to do that, you should also add `./config.js` in `.gitignore` to make sure no hidden variables are pushed to the public repository. The sample config file `./config.sample.js` should be sufficient to pass the test suite.
-
-```yml
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: cp ./config.sample.js ./config.js
-    - run: npm test
-```
-
-You can also choose to run coverage and upload the generated artifacts.
-
-```yml
-    - run: npm run coverage
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Coverage ${{ matrix.node-version }}
-        path: |
-          coverage/
-```
-
-At the moment, checking the artifacts is not [that](https://github.community/t/browsing-artifacts/16954) [easy](https://github.community/t/need-clarification-on-github-actions/16027/2), because one needs to download the zip archive, unpack it and check it. However, the coverage can be checked in the **Actions** section once it's set up.
-
--->
-
-<!-- ### Contract size
-
-The contracts are dangerously close to the hard limit defined by [EIP-170](https://eips.ethereum.org/EIPS/eip-170), specifically **24676 bytes**.
-
-Depending on the Solidity compiler version and the optimization runs, the contract size might increase over the hard limit. As stated in [the Solidity documentation](https://solidity.readthedocs.io/en/latest/using-the-compiler.html#using-the-commandline-compiler), increasing the number of optimizer runs increases the contract size.
-
-> If you want the initial contract deployment to be cheaper and the later function executions to be more expensive, set it to `--optimize-runs=1`. If you expect many transactions and do not care for higher deployment cost and output size, set `--optimize-runs` to a high number.
-
-Even if you remove the unused internal functions, it will not reduce the contract size because the Solidity compiler shakes that unused code out of the generated bytecode.
-
-#### DELEGATECALL approach
-
-Another way to improve contract size is by breaking them into multiple smaller contracts, grouped by functionality and using `DELEGATECALL` to execute that code. A standard that defines code splitting and selective code upgrade is the [EIP-2535 Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535), which is an extension of [Transparent Contract Standard](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1538.md). A detailed explanation, documentation and implementations can be found in the [EIP-2535](https://eips.ethereum.org/EIPS/eip-2535). However, the current EIP is in **Draft** status, which means the interface, implementation, and overall architecture might change. Another thing to keep in mind is that using this pattern increases the gas cost. -->
-
 ## Issues
 
 
-### [Donate will leave funds blocked in contract](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/5)
-![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Major](https://img.shields.io/static/v1?label=Severity&message=Major&color=ff3b30&style=flat-square)
+### [Donate can lock funds in certain situations](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/5)
+![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Medium](https://img.shields.io/static/v1?label=Severity&message=Medium&color=FF9500&style=flat-square)
 
 **Description**
 
@@ -340,13 +191,13 @@ However, the issue is that because `transferToPool` also updates the internal ac
 
 **Recommendation**
 
-Since this is a live contract and other systems might already be aware of the extrenal `donate` function, it might make sense to just do a `ERC20Interface(_asset).safeTransfer` call directly, without calling the `transferToPool`. This way, when the `farm` function is called, the `ERC20Interface(_asset).balanceOf` call in `MarginPool` contract will indeed be higher than the `assetBalance[_asset]` and the difference can be farmed.
+Since this is a live contract and other systems might already be aware of the external `donate` function, it might make sense to just do a `ERC20Interface(_asset).safeTransfer` call directly, without calling the `transferToPool`. This way, when the `farm` function is called, the `ERC20Interface(_asset).balanceOf` call in `MarginPool` contract will indeed be higher than the `assetBalance[_asset]` and the difference can be farmed.
 
 
 ---
 
 
-### [`donate` should check whitelist](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/4)
+### [`donate` should make sure the assets handled are part of the whitelist](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/4)
 ![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Medium](https://img.shields.io/static/v1?label=Severity&message=Medium&color=FF9500&style=flat-square)
 
 **Description**
@@ -430,7 +281,7 @@ Add an additional `require` check to validate the transferred token to the pool 
 ---
 
 
-### [A user can be frontrun when they try to sync their vault](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/1)
+### [A user calling `sync` can be front-run](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/1)
 ![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Medium](https://img.shields.io/static/v1?label=Severity&message=Medium&color=FF9500&style=flat-square)
 
 **Description**
@@ -473,9 +324,7 @@ The method seems to be vulnerable to front-running attacks.
 
 **Recommendation**
 
-- Update timestamp before liquidating?
-
-TBD
+Liquidating a user could check if the user can be liquidated at the time of the execution. This way, the user can't be front-run when trying to sync their vaults.
 
 ---
 
@@ -711,103 +560,6 @@ A clearer, more specific description of the required functionality needs to be r
 **Recommendation**
 
 Consider reviewing a more specific implementation plan before going forward with this functionality.
-
----
-
-
-### [Reduce the number of methods where possible](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/issues/6)
-![Issue status: Open](https://img.shields.io/static/v1?label=Status&message=Open&color=5856D6&style=flat-square) ![Informational](https://img.shields.io/static/v1?label=Severity&message=Informational&color=34C759&style=flat-square)
-
-**Description**
-
-There are a few methods that are only called once.
-
-- `_isNotPartiallyPaused`
-
-
-[code/contracts/core/Controller.sol#L215-L222](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L215-L222)
-```solidity
-    /**
-     * @notice modifier to check if the system is not partially paused, where only redeem and settleVault is allowed
-     */
-    modifier notPartiallyPaused {
-        _isNotPartiallyPaused();
-
-        _;
-    }
-```
-
-
-[code/contracts/core/Controller.sol#L274-L279](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L274-L279)
-```solidity
-    /**
-     * @dev check if the system is not in a partiallyPaused state
-     */
-    function _isNotPartiallyPaused() internal view {
-        require(!systemPartiallyPaused, "C4");
-    }
-```
-
-- `_isNotFullyPaused`
-
-
-[code/contracts/core/Controller.sol#L224-L231](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L224-L231)
-```solidity
-    /**
-     * @notice modifier to check if the system is not fully paused, where no functionality is allowed
-     */
-    modifier notFullyPaused {
-        _isNotFullyPaused();
-
-        _;
-    }
-```
-
-
-[code/contracts/core/Controller.sol#L281-L286](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L281-L286)
-```solidity
-    /**
-     * @dev check if the system is not in an fullyPaused state
-     */
-    function _isNotFullyPaused() internal view {
-        require(!systemFullyPaused, "C5");
-    }
-```
-
-- `_isAuthorized`
-
-
-[code/contracts/core/Controller.sol#L251-L260](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L251-L260)
-```solidity
-    /**
-     * @notice modifier to check if the sender is the account owner or an approved account operator
-     * @param _sender sender address
-     * @param _accountOwner account owner address
-     */
-    modifier onlyAuthorized(address _sender, address _accountOwner) {
-        _isAuthorized(_sender, _accountOwner);
-
-        _;
-    }
-```
-
-
-[code/contracts/core/Controller.sol#L288-L295](https://github.com/monoceros-alpha/review-opyn-gamma-2021-08/blob/879977f600169390eb27a169b69ba7c60f7ee614/code/contracts/core/Controller.sol#L288-L295)
-```solidity
-    /**
-     * @dev check if the sender is an authorized operator
-     * @param _sender msg.sender
-     * @param _accountOwner owner of a vault
-     */
-    function _isAuthorized(address _sender, address _accountOwner) internal view {
-        require((_sender == _accountOwner) || (operators[_accountOwner][_sender]), "C6");
-    }
-```
-
-**Recommendation**
-
-In order to reduce code complexity and reduce gas costs, the methods can be removed and their body can be added directly in the respective modifier.
-
 
 ---
 
@@ -1268,22 +1020,6 @@ $ npx surya describe ./libs/MarginVault.sol
  ($) = payable function
  # = non-constant function
 ```
-
-<!-- ```text
-$ npx surya describe ./Contract.sol
-``` -->
-
-### Coverage
-
-<!-- ```text
-$ npm run coverage
-``` -->
-
-### Tests
-
-<!-- ```text
-$ npx buidler test
-``` -->
 
 ## License
 
